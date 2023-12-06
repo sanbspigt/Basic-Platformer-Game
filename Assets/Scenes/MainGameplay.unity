@@ -2089,15 +2089,15 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1847319991}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: GoToSettings
-        m_Mode: 1
+        m_MethodName: ShowOrHideSettings
+        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
-          m_BoolArgument: 0
+          m_BoolArgument: 1
         m_CallState: 2
 --- !u!114 &1074778529
 MonoBehaviour:
@@ -3239,11 +3239,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d27a1beb2f0b1b41aceb1426f157881, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  screenInfos:
+  - scrType: 0
+    animType: 27
+    screenRef: {fileID: 1965460703}
+    animDuration: 0.2
+  - scrType: 1
+    animType: 21
+    screenRef: {fileID: 198314768}
+    animDuration: 0.3
+  - scrType: 2
+    animType: 26
+    screenRef: {fileID: 17091375}
+    animDuration: 0.1
   music_Key: MUSIC_ON
   sound_Key: SOUND_ON
-  MainScreen: {fileID: 1965460703}
-  GameplayScreen: {fileID: 198314768}
-  SettingsScreen: {fileID: 17091375}
   soundToggle: {fileID: 1780549333}
   musicToggle: {fileID: 504889368}
 --- !u!1 &1895032341
@@ -3610,8 +3620,8 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1847319991}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: GoToMainMenu
-        m_Mode: 1
+        m_MethodName: ShowOrHideSettings
+        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
