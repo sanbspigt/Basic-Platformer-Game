@@ -59,8 +59,7 @@ public class UIManager : MonoBehaviour
     {        
         MakeUIUpdates();
     }
-
-    
+      
 
    
     void Update()
@@ -122,18 +121,31 @@ public class UIManager : MonoBehaviour
     {
         UIScreenInfo info = screens[ScreenTypes.MAIN_MENU];
         if (isOpen)
+        {
             TransitionToScreen(info);
+        }
         else
+        { 
             HidePopup(info);
+        }
+
+       
     }
 
     public void ShowOrHideGamePlay(bool isOpen)
     {
         UIScreenInfo info = screens[ScreenTypes.GAMEPLAY];
         if (isOpen)
-            TransitionToScreen(info);
+        {
+            TransitionToScreen(info);            
+            HidePopup(screens[ScreenTypes.MAIN_MENU]);
+            HidePopup(screens[ScreenTypes.SETTINGS]);
+        }
         else
-            HidePopup(info);
+        {
+            HidePopup(info); 
+        }
+       
     }
 
     public void ShowOrHideSettings(bool isOpen)
@@ -143,6 +155,8 @@ public class UIManager : MonoBehaviour
             TransitionToScreen(info);      
         else
             HidePopup(info);
+
+       
     }
 
     public void SetSound()

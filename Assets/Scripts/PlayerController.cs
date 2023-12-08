@@ -13,15 +13,26 @@ public class PlayerController : MonoBehaviour
     private Vector2 inputAxis;
     private Vector2 velocity;
 
+    [SerializeField]
     private bool isGrounded;
     private float timeSinceJumpPressed;
     private float timeSinceLeftGround;
     private bool canJump;
     private bool canCoyoteJump;
     private bool jumpCut;
-
+    //------------------------------------
+    private int jumpCount;
+    [SerializeField]
+    private bool isTouchingWall;
+    [SerializeField]
+    private bool isDashing;
+    private float dashTimeLeft;
+    private float lastDash = -50.0f;
+    //------------------------------------
     public event Action<bool> OnGroundedChange;
     public event Action OnJump;
+
+
 
     private void Awake()
     {
@@ -32,14 +43,25 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         ProcessInput();
+        //---------
+        ProcessDash();
+        //------------
     }
 
     private void FixedUpdate()
     {
+        //------
+        CheckWallStatus();
+        //---------
         CheckGroundStatus();
         ApplyJump();
         ApplyMovement();
         ApplyGravity();
+
+        //------
+        if (isDashing)
+            ApplyDash();
+        //--------
     }
 
     void ProcessInput()
@@ -52,14 +74,23 @@ public class PlayerController : MonoBehaviour
             canJump = true;
             timeSinceJumpPressed = Time.time;
         }
+        //---------
+        if (Input.GetButtonDown("Dash")&&Time.time >= (lastDash+stats.dashCoolDown))
+        {
+            AttemptToDash();
+        }
+        //----------
     }
 
     void CheckGroundStatus()
     {
         bool wasGrounded = isGrounded;
         isGrounded = Physics2D.CapsuleCast(cCollider.bounds.center,cCollider.size,
-            cCollider.direction,0,Vector2.down,stats.GroundDistance,stats.PlayerLayer);
-
+            cCollider.direction,0,Vector2.down,stats.GroundDistance,stats.groundLayer);
+        //-----------------
+        if (isGrounded)
+            jumpCount = 0;
+        //-------------------------
         if (isGrounded != wasGrounded)
         {
             OnGroundedChange?.Invoke(isGrounded);
@@ -83,6 +114,29 @@ public class PlayerController : MonoBehaviour
 
     void ApplyJump()
     {
+        //---------
+
+        //Double Jump Logic
+        if (canJump && jumpCount < stats.maxJumpCount)
+        {
+            velocity.y = stats.jumpPower;
+            rb.velocity = new Vector2(rb.velocity.x, velocity.y);
+            jumpCount++;
+            canJump = false;
+            OnJump?.Invoke();
+        }//Wall Jump Logic
+        else if (isTouchingWall && !isGrounded && inputAxis.x != 0)
+        {
+
+            float wallJumpDir = (inputAxis.x > 0) ? -1 : 1;
+            rb.AddForce(new Vector2(wallJumpDir*stats.wallJumpForce,stats.wallJumpPower),ForceMode2D.Impulse);
+            jumpCount = 0;
+
+            StartCoroutine(DisableWallJump(stats.tempDisableDuration));
+        }
+
+        //---------
+
         if ((canJump || (canCoyoteJump && !isGrounded)
             && (Time.time < timeSinceLeftGround + stats.coyoteTime))
             && isGrounded)
@@ -101,6 +155,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    IEnumerator DisableWallJump(float duration)
+    {
+        isTouchingWall = false;
+        yield return new WaitForSeconds(duration);
+    }
+
     void ApplyGravity()
     {
         if (!isGrounded)
@@ -117,6 +177,53 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    //---------------
+
+    void CheckWallStatus()
+    {
+        isTouchingWall = Physics2D.CapsuleCast(cCollider.bounds.center,
+            cCollider.size,cCollider.direction,0,Vector2.right*Mathf.Sign(inputAxis.x),0.2f,stats.wallLayer);              
+    }
+
+    void ProcessDash()
+    {
+        if (isDashing)
+        {
+            if (dashTimeLeft > 0)
+            {
+                rb.velocity = new Vector2(stats.dashSpeed * inputAxis.x, rb.velocity.y);
+                dashTimeLeft -= Time.deltaTime;
+            }
+            else
+            {
+                isDashing = false;
+                rb.velocity = velocity;
+            }
+        }
+    }
+
+    void AttemptToDash()
+    {
+        isDashing = true;
+        dashTimeLeft = stats.dashDuration;
+        lastDash = Time.time;
+        rb.velocity = 
+            new Vector2(stats.dashSpeed*Mathf.Sign(inputAxis.x),0);
+    }
+
+    void ApplyDash()
+    {
+        if (dashTimeLeft > 0)
+        {
+            rb.velocity = new Vector2(stats.dashSpeed * Mathf.Sign(inputAxis.x),0);
+            dashTimeLeft -= Time.deltaTime;
+        }
+        else
+            isDashing = false;
+    }
+
+
+    //----------
     [Serializable]
     public class PlayerStats {
         public float maxSpeed = 10.0f;
@@ -132,8 +239,22 @@ public class PlayerController : MonoBehaviour
         public float coyoteTime = 0.2f;
         public float jumpBuffer = 0.1f;
         public float jumpMultiplier = 0.5f;
-        public LayerMask PlayerLayer;
+        public LayerMask groundLayer;
         public float HorizontalTreshold = 0.1f;
         public float VerticalTreshold = 0.1f;
+
+        //Double jump
+        public int maxJumpCount = 2;
+        //Wall jump
+        public LayerMask wallLayer;
+        public float wallJumpPower = 15.0f;
+        public float wallJumpForce = 10.0f;
+        public float wallCheckDistance = 0.1f;
+        public float tempDisableDuration = 0.2f;
+        //Dash 
+        public float dashSpeed = 30.0f;
+        public float dashDuration = 0.3f;
+        public float dashCoolDown = 0.8f;
+       
     }
 }
