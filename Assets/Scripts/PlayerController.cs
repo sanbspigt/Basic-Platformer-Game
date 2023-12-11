@@ -29,10 +29,12 @@ public class PlayerController : MonoBehaviour
     private float dashTimeLeft;
     private float lastDash = -50.0f;
     //------------------------------------
+    [SerializeField]
+    private bool isWallSliding;
+    public float wallSlideSpeed = 3f; // Speed of wall sliding
+    //------------------------------------
     public event Action<bool> OnGroundedChange;
     public event Action OnJump;
-
-
 
     private void Awake()
     {
@@ -43,25 +45,27 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         ProcessInput();
-        //---------
         ProcessDash();
-        //------------
     }
 
     private void FixedUpdate()
     {
-        //------
         CheckWallStatus();
-        //---------
         CheckGroundStatus();
+        CheckWallSlide();
         ApplyJump();
         ApplyMovement();
         ApplyGravity();
 
-        //------
+        if (isWallSliding)
+        {
+            ApplyWallSlide();
+        }
+
         if (isDashing)
+        {
             ApplyDash();
-        //--------
+        }
     }
 
     void ProcessInput()
@@ -74,23 +78,23 @@ public class PlayerController : MonoBehaviour
             canJump = true;
             timeSinceJumpPressed = Time.time;
         }
-        //---------
-        if (Input.GetButtonDown("Dash")&&Time.time >= (lastDash+stats.dashCoolDown))
+
+        if (Input.GetButtonDown("Dash") && Time.time >= (lastDash + stats.dashCoolDown))
         {
             AttemptToDash();
         }
-        //----------
     }
 
     void CheckGroundStatus()
     {
         bool wasGrounded = isGrounded;
-        isGrounded = Physics2D.CapsuleCast(cCollider.bounds.center,cCollider.size,
-            cCollider.direction,0,Vector2.down,stats.GroundDistance,stats.groundLayer);
-        //-----------------
+        isGrounded = Physics2D.CapsuleCast(cCollider.bounds.center, cCollider.size, cCollider.direction, 0, Vector2.down, stats.GroundDistance, stats.groundLayer);
+
         if (isGrounded)
+        {
             jumpCount = 0;
-        //-------------------------
+        }
+
         if (isGrounded != wasGrounded)
         {
             OnGroundedChange?.Invoke(isGrounded);
@@ -109,37 +113,37 @@ public class PlayerController : MonoBehaviour
     void ApplyMovement()
     {
         float targetSpeed = inputAxis.x * stats.maxSpeed;
-        rb.velocity = new Vector2(targetSpeed,rb.velocity.y);
+        rb.velocity = new Vector2(targetSpeed, rb.velocity.y);
     }
 
     void ApplyJump()
     {
-        //---------
-
-        //Double Jump Logic
-        if (canJump && jumpCount < stats.maxJumpCount)
+        // Regular Jump
+        if (canJump && (isGrounded || jumpCount < stats.maxJumpCount))
         {
             velocity.y = stats.jumpPower;
             rb.velocity = new Vector2(rb.velocity.x, velocity.y);
             jumpCount++;
             canJump = false;
             OnJump?.Invoke();
-        }//Wall Jump Logic
-        else if (isTouchingWall && !isGrounded && inputAxis.x != 0)
+        } 
+        else if (isWallSliding && canJump)// Wall Jump
         {
+            rb.velocity = new Vector2(rb.velocity.x, 0); // Reset Y velocity
 
-            float wallJumpDir = (inputAxis.x > 0) ? -1 : 1;
-            rb.AddForce(new Vector2(wallJumpDir*stats.wallJumpForce,stats.wallJumpPower),ForceMode2D.Impulse);
-            jumpCount = 0;
+            // Upward and away from the wall
+            Vector2 wallJumpDirection = new Vector2(-Mathf.Sign(inputAxis.x), 1).normalized;
+            rb.AddForce(wallJumpDirection * stats.wallJumpPower, ForceMode2D.Impulse);
 
-            StartCoroutine(DisableWallJump(stats.tempDisableDuration));
+            jumpCount = 0; // Reset jump count for continuous wall jumping
+
+            canJump = false;
+            isWallSliding = false; // Stop sliding when jumping off the wall
+            OnJump?.Invoke();
         }
 
-        //---------
-
-        if ((canJump || (canCoyoteJump && !isGrounded)
-            && (Time.time < timeSinceLeftGround + stats.coyoteTime))
-            && isGrounded)
+        // Coyote Time Jump
+        else if ((canJump || (canCoyoteJump && !isGrounded) && (Time.time < timeSinceLeftGround + stats.coyoteTime)) && isGrounded)
         {
             velocity.y = stats.jumpPower;
             rb.velocity = new Vector2(rb.velocity.x, velocity.y);
@@ -148,41 +152,51 @@ public class PlayerController : MonoBehaviour
             jumpCut = true;
             OnJump?.Invoke();
         }
-        else if (!Input.GetButton("Jump") &&
-            rb.velocity.y>0 && jumpCut)
+
+        // Jump Cut
+        else if (!Input.GetButton("Jump") && rb.velocity.y > 0 && jumpCut)
         {
             rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * stats.jumpMultiplier);
         }
     }
 
-    IEnumerator DisableWallJump(float duration)
+    void CheckWallSlide()
     {
-        isTouchingWall = false;
-        yield return new WaitForSeconds(duration);
+        if (isTouchingWall && !isGrounded && rb.velocity.y < 0)
+        {
+            isWallSliding = true;
+        }
+        else
+        {
+            isWallSliding = false;
+        }
+    }
+
+    void ApplyWallSlide()
+    {
+        if (isWallSliding)
+        {
+            if (rb.velocity.y < -wallSlideSpeed)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, -wallSlideSpeed);
+            }
+        }
     }
 
     void ApplyGravity()
     {
         if (!isGrounded)
         {
-            float gravityForce =
-                (rb.velocity.y > 0 && !Input.GetButton("Jump")) ?
-                      stats.fallAccleration : stats.inAirAcceleration;
+            float gravityForce = (rb.velocity.y > 0 && !Input.GetButton("Jump")) ? stats.fallAccleration : stats.inAirAcceleration;
 
-            velocity.y = Mathf.MoveTowards(rb.velocity.y,
-                -stats.MaxFallSpeed,
-                gravityForce * Time.fixedDeltaTime);
-
-            rb.velocity = new Vector2(rb.velocity.x,velocity.y);
+            velocity.y = Mathf.MoveTowards(rb.velocity.y, -stats.MaxFallSpeed, gravityForce * Time.fixedDeltaTime);
+            rb.velocity = new Vector2(rb.velocity.x, velocity.y);
         }
     }
 
-    //---------------
-
     void CheckWallStatus()
     {
-        isTouchingWall = Physics2D.CapsuleCast(cCollider.bounds.center,
-            cCollider.size,cCollider.direction,0,Vector2.right*Mathf.Sign(inputAxis.x),0.2f,stats.wallLayer);              
+        isTouchingWall = Physics2D.CapsuleCast(cCollider.bounds.center, cCollider.size, cCollider.direction, 0, Vector2.right * Mathf.Sign(inputAxis.x), 0.2f, stats.wallLayer);
     }
 
     void ProcessDash()
@@ -207,19 +221,26 @@ public class PlayerController : MonoBehaviour
         isDashing = true;
         dashTimeLeft = stats.dashDuration;
         lastDash = Time.time;
-        rb.velocity = 
-            new Vector2(stats.dashSpeed*Mathf.Sign(inputAxis.x),0);
+        rb.velocity = new Vector2(stats.dashSpeed * Mathf.Sign(inputAxis.x), 0);
     }
 
     void ApplyDash()
     {
         if (dashTimeLeft > 0)
         {
-            rb.velocity = new Vector2(stats.dashSpeed * Mathf.Sign(inputAxis.x),0);
+            rb.velocity = new Vector2(stats.dashSpeed * Mathf.Sign(inputAxis.x), 0);
             dashTimeLeft -= Time.deltaTime;
         }
         else
+        {
             isDashing = false;
+        }
+    }
+
+    IEnumerator DisableWallJump(float duration)
+    {
+        isTouchingWall = false;
+        yield return new WaitForSeconds(duration);
     }
 
 
