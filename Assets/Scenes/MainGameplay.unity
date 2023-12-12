@@ -3804,7 +3804,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -687887413, guid: d7055662263ff76498af6aebceaeac3f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 9366544fd1a448e47b502390cacb401f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -3823,8 +3823,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1935124895}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.752, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.068, y: -1.791, z: 0}
+  m_LocalScale: {x: 1.2834, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2023156706}
@@ -4142,8 +4142,8 @@ CapsuleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.0022890568, y: -1.8}
-  m_Size: {x: 0.64191484, y: 1.0371108}
+  m_Offset: {x: -0.06788707, y: -1.781092}
+  m_Size: {x: 0.6218476, y: 1.0245054}
   m_Direction: 0
 --- !u!50 &2023156708
 Rigidbody2D:
@@ -4182,11 +4182,11 @@ MonoBehaviour:
     maxSpeed: 10
     jumpPower: 15
     acceleration: 30
-    groundDeceleration: 20
+    groundDeceleration: 15
     airDeceleration: 5
-    fallAccleration: 60
+    fallAccleration: 40
     inAirAcceleration: 30
-    MaxFallSpeed: 40
+    MaxFallSpeed: 30
     GroundForce: -1.5
     GroundDistance: 0.1
     coyoteTime: 0.2
@@ -4208,11 +4208,11 @@ MonoBehaviour:
     dashSpeed: 30
     dashDuration: 0.4
     dashCoolDown: 0.8
+    wallSlideSpeed: 3
   isGrounded: 0
   isTouchingWall: 0
   isDashing: 0
   isWallSliding: 0
-  wallSlideSpeed: 3
 --- !u!1 &2095942296
 GameObject:
   m_ObjectHideFlags: 0

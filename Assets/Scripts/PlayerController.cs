@@ -132,50 +132,44 @@ public class PlayerController : MonoBehaviour
         // Apply horizontal movement based on input
         float targetSpeed = inputAxis.x * stats.maxSpeed;
         rb.velocity = new Vector2(targetSpeed, rb.velocity.y);
+
+
+        if (inputAxis.x > 0)
+        {
+            FlipSprite(true); // Face right
+        }
+        else if (inputAxis.x < 0)
+        {
+            FlipSprite(false); // Face left
+        }
     }
 
     void ApplyJump()
     {
-        // Regular Jump Logic
+        // Regular Jump
         if (canJump && (isGrounded || jumpCount < stats.maxJumpCount))
         {
-            // If the player can jump and is either grounded or hasn't reached the max jump count...
-            // Set the vertical velocity to the jump power defined in stats
             velocity.y = stats.jumpPower;
             rb.velocity = new Vector2(rb.velocity.x, velocity.y);
-
-            // Increment the jump count as the player has performed a jump
             jumpCount++;
-
-            // Set canJump to false to prevent repeated jumps without new input
             canJump = false;
-
-            // Invoke the OnJump event which can be used for animations or sound effects
             OnJump?.Invoke();
         }
-        // Wall Jump Logic
+        // Wall Jump
         else if (isWallSliding && canJump)
         {
-            // If the player is sliding on a wall and can jump...
-            // Reset the Y velocity to ensure the player jumps upwards
-            rb.velocity = new Vector2(rb.velocity.x, 0);
+            rb.velocity = new Vector2(0, 0); // Reset velocity for responsive jump
 
-            // Calculate the direction of the wall jump (away from the wall and upwards)
-            Vector2 wallJumpDirection = new Vector2(-Mathf.Sign(inputAxis.x), transform.position.y + 10).normalized;
+            // Calculate wall jump direction (away from the wall and upwards)
+            Vector2 wallJumpDirection = new Vector2(-Mathf.Sign(inputAxis.x), 1).normalized;
 
-            // Apply a force in the calculated direction using the wall jump power
             rb.AddForce(wallJumpDirection * stats.wallJumpPower, ForceMode2D.Impulse);
 
-            // Do not increment jumpCount to allow for continuous wall jumping
-
-            // Reset canJump to false and stop wall sliding
+            // Do not increment jumpCount for wall jumps
             canJump = false;
-            isWallSliding = false;
-
-            // Invoke the OnJump event for wall jump
+            isWallSliding = false; // Exit wall slide state
             OnJump?.Invoke();
         }
-
         // Coyote Time Jump Logic
         else if ((canJump || (canCoyoteJump && !isGrounded) && (Time.time < timeSinceLeftGround + stats.coyoteTime)) && isGrounded)
         {
@@ -203,19 +197,19 @@ public class PlayerController : MonoBehaviour
 
     void CheckWallSlide()
     {
-        // Check if the player is sliding on a wall
-        isWallSliding = isTouchingWall && !isGrounded && rb.velocity.y < 0;
+        isWallSliding = isTouchingWall && !isGrounded;
+        if (isWallSliding)
+        {
+            jumpCount = 0; // Reset jump count when starting wall slide for fluidity
+        }
     }
 
     void ApplyWallSlide()
     {
-        // Apply wall sliding mechanics
         if (isWallSliding)
         {
-            if (rb.velocity.y < -stats.wallSlideSpeed)
-            {
-                rb.velocity = new Vector2(rb.velocity.x, -stats.wallSlideSpeed);
-            }
+            float slideSpeed = Mathf.Max(rb.velocity.y, -stats.wallSlideSpeed);
+            rb.velocity = new Vector2(rb.velocity.x, slideSpeed);
         }
     }
 
@@ -285,6 +279,19 @@ public class PlayerController : MonoBehaviour
         else
         {
             isDashing = false;
+        }
+    }
+
+
+    void FlipSprite(bool faceRight)
+    {
+        if (faceRight)
+        {
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+        }
+        else
+        {
+            transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
         }
     }
 
