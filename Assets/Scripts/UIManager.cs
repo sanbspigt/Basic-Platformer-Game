@@ -69,8 +69,8 @@ public class UIManager : MonoBehaviour
     void Update()
     {
         // Handle back button functionality (e.g., Android back button)
-        if (Input.GetKeyDown(KeyCode.Escape))
-            HandleBackFunctionality();
+        //if (Input.GetKeyDown(KeyCode.Escape))
+        //    HandleBackFunctionality();
     }
 
     void HandleBackFunctionality()

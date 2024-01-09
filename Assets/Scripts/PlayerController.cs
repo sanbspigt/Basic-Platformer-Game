@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 
 [RequireComponent(typeof(Rigidbody2D)),RequireComponent(typeof(CapsuleCollider2D))]
@@ -13,10 +14,12 @@ public class PlayerController : MonoBehaviour
     // Rigidbody and Collider components for physics interactions
     private Rigidbody2D rb;
     private CapsuleCollider2D cCollider;
-
+    private PlayerInputAction pActions;
     // Input and velocity vectors
+
     private Vector2 inputAxis;
     private Vector2 velocity;
+
 
     // State variables for ground check and jump mechanics
     [SerializeField] private bool isGrounded;
@@ -47,12 +50,53 @@ public class PlayerController : MonoBehaviour
         // Initialize components
         rb = GetComponent<Rigidbody2D>();
         cCollider = GetComponent<CapsuleCollider2D>();
+
+        pActions = new PlayerInputAction();
+
+        pActions.PlayerInput.move.performed += OnMovePerformed;
+        pActions.PlayerInput.move.canceled += OnMoveCancelled;
+        pActions.PlayerInput.jump.performed += OnJumpPerformed;
+        pActions.PlayerInput.dash.performed += OnDashPerformed;
     }
 
+    private void OnEnable()
+    {
+        pActions.Enable();
+    }
+
+    private void OnDisable()
+    {
+        pActions.Disable();
+    }
+
+    //----------New Input System Controls
+    void OnMovePerformed(InputAction.CallbackContext context)
+    {
+        inputAxis = context.ReadValue<Vector2>();
+    }
+    void OnMoveCancelled(InputAction.CallbackContext context)
+    {
+        inputAxis = Vector2.zero;
+    }
+
+    void OnJumpPerformed(InputAction.CallbackContext context)
+    {
+        canJump = true;
+        timeSinceJumpPressed = Time.time;
+    }
+
+    void OnDashPerformed(InputAction.CallbackContext context)
+    {
+        if (Time.time >= (lastDash + stats.dashCoolDown))
+        {
+            AttemptToDash();
+        }
+    }
+    //-------------------------
     private void Update()
     {
         // Process player input each frame
-        ProcessInput();
+        // ProcessInput();
         ProcessDash();
     }
 
